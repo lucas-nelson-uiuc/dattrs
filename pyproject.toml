@@ -1,0 +1,20 @@
+[project]
+name = "dattrs"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "lucas-nelson-uiuc", email = "lucas.nelson.uiuc@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+core = [
+    "attrs>=25.3.0",
+    "narwhals>=1.39.0",
+]

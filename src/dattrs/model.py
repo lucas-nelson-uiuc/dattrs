@@ -36,9 +36,21 @@ class Model:
 
     Examples
     --------
+    >>> import polars as pl
+    >>> data = pl.DataFrame({
+            "id": [0, 1, 2, 3],
+            "name": ["First Last", "Sven Bjorg", None, "Random Person"],
+            "phone_number": [
+                ["123", "456", "7890"],
+                ["777", "777", "7777"],
+                ["000", "000", "0000"],
+                ["123", "123", "1234"],
+            ],
+        })
+    >>>
     >>> from attrs import define, field
     >>> from dattrs import Model, expr_ns
-
+    >>>
     >>> @define
     >>> class Phonebook(Model):
     >>>     id: nw.Int16 = field(validator=expr_ns.is_unique)
@@ -47,7 +59,7 @@ class Model:
                 converter=expr_ns.list.join.bind(delimiter="-"), # TODO: update example converter
                 validator=expr_ns.str.contains.bind(r"\\d{3}-\\d{3}-\\d{4}")
             )
-
+    >>>
     >>> # transform data according to field converters
     >>> Phonebook.convert(data)
     >>>

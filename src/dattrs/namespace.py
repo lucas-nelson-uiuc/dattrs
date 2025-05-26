@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Any
 
 import narwhals as nw
+from narwhals import Expr
 
 
 class ExprMethod:
@@ -152,3 +153,6 @@ class ExprNamespace:
             namespace=self._namespace,
             requires_expr=self._requires_expr,
         )
+
+
+expr_ns = ExprNamespace(namespace=Expr, requires_expr=False)

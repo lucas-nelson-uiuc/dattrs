@@ -192,11 +192,11 @@ class Model:
             DataFrame-like object of the original backend with conversion(s)
             applied.
         """
-        narwhals_frame: DataFrameT = nw.from_native(data)
-        columns: list[str] = narwhals_frame.columns
+        data: DataFrameT = nw.from_native(data)
+        columns: list[str] = data.columns
 
         return (
-            narwhals_frame.pipe(cls.__dattrs_pre_convert__)
+            data.pipe(cls.__dattrs_pre_convert__)
             .with_columns(
                 *(
                     convert_expression(field, field_exists=field.name in columns)
@@ -236,32 +236,32 @@ class Model:
         check if no values fail for a condition(s). This allows us to easily
         return all failures which are of more value than all successes.
         """
-        compliant_frame: IntoDataFrameT = nw.from_native(data)
-        for field in cls.fields():
-            if (field.validator is None) or (field.alias not in data.columns):
+        data: DataFrameT = nw.from_native(data)
+        for _field in cls.fields():
+            if (_field.validator is None) or (_field.alias not in data.columns):
                 continue
 
             compare_op = operator.and_ if strict else operator.or_
             validators = (
-                field.validator._validators
-                if hasattr(field.validator, "_validators")
-                else (field.validator,)
+                _field.validator._validators
+                if hasattr(_field.validator, "_validators")
+                else (_field.validator,)
             )
             validator_expr = reduce(
                 compare_op,
-                map(lambda func: func(nw.col(field.alias)), validators),
+                map(lambda func: func(nw.col(_field.alias)), validators),
             )
 
             if not invert:
                 validator_expr = operator.inv(validator_expr)
 
             try:
-                assert compliant_frame.filter(validator_expr).is_empty()
-                print(f"SUCCESS: {field.alias}")
-            except AssertionError as e:
-                print(f"FAILURE: {field.alias}")
+                assert data.filter(validator_expr).is_empty()
+                print(f"SUCCESS: {_field.alias}")
+            except AssertionError:
+                print(f"FAILURE: {_field.alias}")
             except Exception as e:
-                msg = f"Unable to perform validation for {field.alias}"
+                msg = f"Unable to perform validation for {_field.alias}"
                 raise RuntimeError(msg) from e
 
     @classmethod

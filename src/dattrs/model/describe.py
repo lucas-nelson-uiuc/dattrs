@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Sequence
 
 from attrs import Attribute
 
@@ -9,6 +8,7 @@ from narwhals._expression_parsing import ExprKind, ExpansionKind
 
 class Description:
     """Generic object representing decipherable metadata from a field."""
+
     _name: str
     _docstring: str
     _expr: Expr
@@ -29,5 +29,5 @@ def describe_field(field: Attribute) -> Description:
         _name=field.name,
         _docstring=field.converter.__doc__,
         _expr=field.converter,
-        **field.converter._expr._metadata
+        **field.converter._expr._metadata,
     )

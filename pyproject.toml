@@ -21,3 +21,6 @@ core = [
     "attrs>=25.3.0",
     "narwhals>=1.39.0",
 ]
+
+[tool.ruff]
+exclude = ["examples/*.py"]

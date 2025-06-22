@@ -46,9 +46,11 @@ def schema(cls: type = None, **attrs_define_kwargs):
 
             def _identity_function(data):
                 return data
+            
+            _data = nw.from_native(data)
 
             return (
-                data.pipe(getattr(cls, "__dattrs_pre_convert__", _identity_function))
+                _data.pipe(getattr(cls, "__dattrs_pre_convert__", _identity_function))
                 .pipe(cls.__dattrs_convert__, strict=strict, fill_null=fill_null)
                 .pipe(getattr(cls, "__dattrs_post_convert__", _identity_function))
                 .to_native()
@@ -70,11 +72,15 @@ def schema(cls: type = None, **attrs_define_kwargs):
                 validate_options = dict()
 
             _data = nw.from_native(data)
+            
             print("Running pre-validations ...")
             cls.validate(data=_data, **validate_options)
+
             _data = cls.convert(data=_data, **convert_options)
+            
             print("\nRunning post-validations ...")
             cls.validate(data=_data, **validate_options)
+            
             return _data
 
         cls.__dattrs_validate__ = __dattrs_validate__

@@ -29,7 +29,6 @@ def validate(schema: type, data: IntoDataFrameT, **configuration) -> IntoDataFra
     assert attrs.has(schema)
 
     _data = nw.from_native(data)
-
     for fld in attrs.fields(schema):
         if fld.validator is None:
             continue

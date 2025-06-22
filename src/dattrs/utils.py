@@ -16,6 +16,9 @@ def _proxy_native_to_narwhals_dtype(
     if isinstance_or_issubclass(dtype, DType):
         return dtype
 
+    if not isinstance(implementation, Implementation):
+        raise ValueError("Must pass implementation to infer data type.")
+
     if implementation.is_pyarrow():
         cast_func = nw._arrow.utils.native_to_narwhals_dtype
 
@@ -39,18 +42,13 @@ def _proxy_native_to_narwhals_dtype(
 
     else:
         raise ValueError(
-            "Unable to find method for converting type to Narwhals DataType."
+            f"Unable to find Narwhals data type casting method for {implementation}. Please make sure this backend is supported by Narwhals."
         )
 
     try:
-        cast_dtype = cast_func(
+        return cast_func(
             dtype, version=version, backend_version=implementation._backend_version()
         )
-        assert isinstance_or_issubclass(cast_dtype, DType)
-        return cast_dtype
-    except AssertionError as e:
-        msg = f"Unable to cast data type ({cast_dtype}) to a Narwhals DType."
-        raise TypeError(msg) from e
     except Exception:
         return cast_func(
             dtype,

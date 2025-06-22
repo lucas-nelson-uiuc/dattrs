@@ -3,6 +3,7 @@ from attrs import Attribute, NOTHING
 
 import narwhals as nw
 from narwhals.typing import DataFrameT, IntoDataFrameT
+from narwhals.utils import Implementation
 
 from dattrs.utils import _proxy_native_to_narwhals_dtype
 
@@ -19,36 +20,58 @@ def convert(
         An attrs-like class.
     data : IntoDataFrameT
         An object that can be converted to a Narwhals DataFrame.
+    strict : bool
+        Whether to return all fields or only fields specified in `schema`.
+    fill_null : bool
+        Whether to fill null values with the field's default value.
 
     Returns
     -------
-    IntoDataFrameT
+    DataFrameT
         The `data` in its original backend with transformations applied.
     """
     assert attrs.has(schema)
 
     data = nw.from_native(data)
     queries = (
-        _convert_field(fld=fld, exists=fld.name in data.columns, fill_null=fill_null)
+        _convert_field(
+            fld=fld,
+            exists=fld.name in data.columns,
+            implementation=data.implementation,
+            fill_null=fill_null,
+        )
         for fld in attrs.fields(schema)
     )
+
     if strict:
-        return data.select(*queries)
-    return data.with_columns(*queries)
+        return data.select(*queries).to_native()
+    return data.with_columns(*queries).to_native()
 
 
-def _convert_field(fld: Attribute, exists: bool, fill_null: bool = False) -> nw.Expr:
+def _convert_field(
+    fld: Attribute,
+    exists: bool,
+    implementation: Implementation,
+    fill_null: bool = False,
+) -> nw.Expr:
     """
     Apply transformations, if defined, at field level.
 
+    This function is not meant to be called on its own since information like
+    `exists` and `implementation` rely on knowing the corresponding DataFrame
+    and its backend.
+
     Parameters
     ----------
-    data : DataFrameT
-        A Narwhals DataFrame.
     fld : Attribute
         An `attrs` attribute, typically an instance of `attrs.field()`.
-    **configuration
-        Keyword arguments to configure validation.
+    exists : bool
+        Whether column exists in dataframe. This determines how the field is
+        created, along with its default value and `fill_null`.
+    implementation : Implementation
+        DataFrame backend implementation.
+    fill_null : bool
+        Whether to fill null values with the field's default value.
 
     Returns
     -------
@@ -81,7 +104,11 @@ def _convert_field(fld: Attribute, exists: bool, fill_null: bool = False) -> nw.
     def cast_dtype(expr: nw.Expr) -> nw.Expr:
         """Cast expression to appropriate DType, if defined."""
         if fld.type is not None:
-            expr = expr.cast(_proxy_native_to_narwhals_dtype(fld.type))
+            expr = expr.cast(
+                _proxy_native_to_narwhals_dtype(
+                    dtype=fld.type, implementation=implementation
+                )
+            )
         return expr
 
     def apply_converter(expr: nw.Expr) -> nw.Expr:

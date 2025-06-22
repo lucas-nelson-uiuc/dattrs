@@ -58,9 +58,7 @@ def _convert_field(fld: Attribute, exists: bool, fill_null: bool = False) -> nw.
     """
 
     def _define_default() -> nw.Expr:
-        return (
-            fld.default.__call__() if callable(fld.default) else fld.default
-        )
+        return fld.default.__call__() if callable(fld.default) else fld.default
 
     def define_expression() -> nw.Expr:
         """Initialize expression based on field definition."""
@@ -75,9 +73,7 @@ def _convert_field(fld: Attribute, exists: bool, fill_null: bool = False) -> nw.
                 raise ValueError(
                     "If fld does not exist, you must pass a default value!"
                 )
-            _default = (
-                fld.default.__call__() if callable(fld.default) else fld.default
-            )
+            _default = fld.default.__call__() if callable(fld.default) else fld.default
             expr = nw.lit(_default) if not isinstance(_default, nw.Expr) else _default
 
         return expr

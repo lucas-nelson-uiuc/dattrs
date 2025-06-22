@@ -20,19 +20,17 @@ def schema(cls: type = None, **attrs_define_kwargs):
     """
 
     def wrapper(cls):
-
         attrs_define_kwargs.setdefault("kw_only", True)
         cls = define(cls, **attrs_define_kwargs)
 
         @classmethod
         def __dattrs_validate__(cls, data: IntoDataFrameT) -> DataFrameT:
             return _validate(schema=cls, data=data)
-        
+
         @classmethod
         def validate(cls, data: IntoDataFrameT) -> DataFrameT:
             """Validate data according to class-defined schema."""
             cls.__dattrs_validate__(data=data)
-
 
         @classmethod
         def __dattrs_convert__(
@@ -45,7 +43,9 @@ def schema(cls: type = None, **attrs_define_kwargs):
             cls, data: IntoDataFrameT, *, strict: bool = False, fill_null: bool = False
         ) -> DataFrameT:
             """Convert data according to class-defined schema."""
-            def _identity_function(data): return data
+
+            def _identity_function(data):
+                return data
 
             return (
                 data.pipe(getattr(cls, "__dattrs_pre_convert__", _identity_function))

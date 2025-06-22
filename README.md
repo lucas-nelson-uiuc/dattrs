@@ -1,8 +1,12 @@
 # dattrs
 
-Like `attrs`, but for DataFrames.
+**Like `attrs`, except for any DataFrame backend.**
 
-## Getting Started
+This project combines two robust packages that allows users to define declarative, class-based pipelines:
+- [`attrs`](https://www.attrs.org/en/stable/): concise, declarative class definitions with built-in validation
+- [`narwhals`](https://narwhals-dev.github.io/narwhals/): unifies DataFrame APIs (like Polars, Pandas, Spark) under a consistent interface
+
+## Installation
 
 ```bash
 # install with uv
@@ -12,31 +16,30 @@ uv pip install dattrs
 pip install dattrs
 ```
 
-## Examples
+## Getting Started
 
-Easily define a model with field-/frame-level details for converting or
-validating a DataFrame:
+Easily define a model with field-level details for converting or validating a DataFrame:
 
 ```python
 import narwhals as nw
-from attrs import define, field
-from dattrs import Model, expr_ns
+from attrs import field
+from dattrs import schema
 
 
 # create a simple model containing each field's name and data type
-@define
-class Phonebook(Model):
+@schema
+class Phonebook:
     id: nw.Int16
     name: nw.String
     phone_number: nw.List(nw.String)
 
 # additionally, you can define field-level converters and validators
-@define
-class Phonebook(Model):
-    id: nw.Int16 = field(validator=expr_ns.is_unique)
+@schema
+class Phonebook:
+    id: nw.Int16 = field(validator=nw.Expr.is_unique)
     name: nw.String = field(
-        converter=(expr_ns.str.strip_chars, expr_ns.str.to_uppercase), # chain multiple expressions
-        validator=~expr.is_null
+        converter=(lambda expr: expr.str.strip_chars, lambda expxr: expr.str.to_uppercase), # chain multiple expressions
+        validator= ~nw.Expr.is_null()
     )
     phone_number: nw.List(nw.String)
 ```
@@ -70,15 +73,20 @@ Phonebook.validate(frame)
 Phonebook.pipe(frame)
 ```
 
-## Philosophy
+## Why not ... ?
 
-This project stitches together two projects:
-- `attrs`: for robust class creation
-- `narwhals`: for agnostic DataFrame support
+#### Patito
 
-The primary objective for combining these two projects is to allow for
-declarative model-based workflows that apply that support multiple DataFrame
-libraries. Unlike similar projects like `pandera` or `patito`, `dattrs`
-focuses on allowing you to make more of your data workflows.
+...
 
-See <link-to-documentation> to learn more!
+#### Pandera
+
+...
+
+#### Pointblank
+
+...
+
+#### Dataframely
+
+...

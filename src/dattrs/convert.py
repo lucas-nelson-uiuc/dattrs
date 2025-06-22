@@ -1,96 +1,102 @@
-from typing import Callable
-
-from attrs import Attribute, Factory, NOTHING
+import attrs
+from attrs import Attribute, NOTHING
 
 import narwhals as nw
-from narwhals import Expr
-from narwhals.dtypes import DType
+from narwhals.typing import DataFrameT, IntoDataFrameT
+
+from dattrs.utils import _proxy_native_to_narwhals_dtype
 
 
-def _apply_field_default(field: Attribute, field_exists: bool) -> Expr:
-    """Assign default value for expression."""
-    if not field_exists:
-        if field.default is NOTHING:
-            msg = "Must provide default if field does not exist!"
-            raise ValueError(msg)
-        default = (
-            field.default.factory()
-            if isinstance(field.default, Factory)
-            else field.default
+def convert(
+    schema: type, data: IntoDataFrameT, *, strict: bool = False, fill_null: bool = False
+) -> DataFrameT:
+    """
+    Run class-defined transformations against a DataFrame.
+
+    Parameters
+    ----------
+    schema : type
+        An attrs-like class.
+    data : IntoDataFrameT
+        An object that can be converted to a Narwhals DataFrame.
+
+    Returns
+    -------
+    IntoDataFrameT
+        The `data` in its original backend with transformations applied.
+    """
+    assert attrs.has(schema)
+
+    data = nw.from_native(data)
+    queries = (
+        _convert_field(fld=fld, exists=fld.name in data.columns, fill_null=fill_null)
+        for fld in attrs.fields(schema)
+    )
+    if strict:
+        return data.select(*queries)
+    return data.with_columns(*queries)
+
+
+def _convert_field(fld: Attribute, exists: bool, fill_null: bool = False) -> nw.Expr:
+    """
+    Apply transformations, if defined, at field level.
+
+    Parameters
+    ----------
+    data : DataFrameT
+        A Narwhals DataFrame.
+    fld : Attribute
+        An `attrs` attribute, typically an instance of `attrs.field()`.
+    **configuration
+        Keyword arguments to configure validation.
+
+    Returns
+    -------
+    None
+        This function runs as a side-effect. Eventually, it will return
+        failures and other useful information.
+    """
+
+    def _define_default() -> nw.Expr:
+        return (
+            fld.default.__call__() if callable(fld.default) else fld.default
         )
-        return nw.lit(default)
 
-    if field.default is not NOTHING:
-        default = (
-            field.default.factory()
-            if isinstance(field.default, Factory)
-            else field.default
-        )
-        return nw.col(field.name).fill_null(value=field.default)
-    return nw.col(field.name)
+    def define_expression() -> nw.Expr:
+        """Initialize expression based on field definition."""
+        if exists:
+            expr = nw.col(fld.name)
+            if fill_null and (fld.default is not NOTHING):
+                # TODO: add support for other fill_null arguments
+                _default = _define_default()
+                expr = expr.fill_null(value=_default)
+        else:
+            if fld.default is NOTHING:
+                raise ValueError(
+                    "If fld does not exist, you must pass a default value!"
+                )
+            _default = (
+                fld.default.__call__() if callable(fld.default) else fld.default
+            )
+            expr = nw.lit(_default) if not isinstance(_default, nw.Expr) else _default
 
+        return expr
 
-def _apply_field_type(expr: Expr, dtype: DType) -> Expr:
-    """
-    Cast expression to declared type.
+    def cast_dtype(expr: nw.Expr) -> nw.Expr:
+        """Cast expression to appropriate DType, if defined."""
+        if fld.type is not None:
+            expr = expr.cast(_proxy_native_to_narwhals_dtype(fld.type))
+        return expr
 
-    Parameters
-    ----------
-    expr : Expr
-        Narwhals expression.
-    dtype : DType
-        Narwhals data type.
+    def apply_converter(expr: nw.Expr) -> nw.Expr:
+        """Apply field converters to expression, if defined."""
+        if fld.converter is not None:
+            expr = fld.converter(expr)
+        return expr
 
-    Returns
-    -------
-    Expr
-        Narwhals expression.
-    """
-    return expr.cast(dtype)
+    def rename_field(expr: nw.Expr) -> nw.Expr:
+        """Rename field to alias, if defined."""
+        return expr.alias(fld.alias)
 
-
-def _apply_field_converter(expr: Expr, converter: Callable | None = None) -> Expr:
-    """
-    Apply field converter to an expression.
-
-    Parameters
-    ----------
-    expr : Expr
-        Narwhals expression.
-    converter : Callable, optional
-        Function to convert expression.
-
-    Returns
-    -------
-    Expr
-        Narwhals expression.
-    """
-    return expr if converter is None else converter(expr)
-
-
-def convert_expression(field: Attribute, field_exists: bool) -> Expr:
-    """
-    Construct compliant expression from field defintion.
-
-    This process has the following order:
-        - assign a default value based on `field.default` or `field.factory`
-        - cast the expression to `field.type`
-        - convert the expression according to `field.converter`
-
-    Parameters
-    ----------
-    field : Attribute
-        An attrs field, typically from an attrs-decorated class.
-    field_exists : bool
-        Whether field exists in the DataFrame. This determines how to apply the
-        default value, if provided.
-
-    Returns
-    -------
-    Expr
-        Narwhals expression with relevant conversions applied.
-    """
-    _expr: Expr = _apply_field_default(field, field_exists=field_exists)
-    _expr: Expr = _apply_field_type(expr=_expr, dtype=field.type)
-    _expr: Expr = _apply_field_converter(expr=_expr, converter=field.converter)
-    return _expr.alias(field.alias)
+    expr = define_expression()
+    return expr.pipe(cast_dtype).pipe(apply_converter).pipe(rename_field)

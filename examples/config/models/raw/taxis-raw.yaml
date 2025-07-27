@@ -1,0 +1,56 @@
+name: Taxis Raw
+schema:
+  pickup:
+    dtype: date
+    converter:
+      - function: clip
+        parameters:
+          lower_bound: "2019-03-01"
+          upper_bound: "2019-03-31"
+  dropoff:
+    dtype: date
+    converter:
+      - function: clip
+        parameters:
+          lower_bound: "2019-03-01"
+          upper_bound: "2019-03-31"
+  fare:
+    dtype: float
+    validator:
+      - function: ge
+        parameters:
+          other: 0
+        level: error
+  tip:
+    dtype: float
+    validator:
+      - function: ge
+        parameters:
+          other: 0
+        level: error
+  tolls:
+    dtype: float
+    validator:
+      - function: ge
+        parameters:
+          other: 0
+        level: error
+  total:
+    dtype: float
+    validator:
+      - function: ge
+        parameters:
+          other: 0
+        level: error
+  payment:
+    dtype: string
+    validator:
+      - function: is_not_null
+  pickup_zone:
+    dtype: string
+    validator:
+      - function: is_not_null
+  dropoff_zone:
+    dtype: string
+    validator:
+      - function: is_not_null

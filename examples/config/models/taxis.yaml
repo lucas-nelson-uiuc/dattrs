@@ -1,0 +1,14 @@
+name: Taxis
+sources:
+  - path: examples/data/taxis.csv
+    has_header: true
+    separator: ","
+  - path: examples/data/taxis.csv
+    has_header: true
+    separator: ","
+  - path: examples/data/taxis.csv
+    has_header: true
+    separator: ","
+stages:
+  raw: examples/config/models/raw/taxis-raw.yaml
+  cdm: examples/config/models/cdm/taxis-cdm.yaml

@@ -13,7 +13,7 @@ def _():
     from attrs import define, field
 
     from dattrs.schema import schema
-    return field, nw, pa, pl, schema
+    return field, nw, schema
 
 
 @app.cell
@@ -28,7 +28,7 @@ def _():
         ],
         "temperature": [95.4, 80.3, 65.3, 95.4, None],
     }
-    return (data,)
+    return
 
 
 @app.cell
@@ -72,18 +72,6 @@ def _(field, nw, schema):
                 temperature_C=scale_temperature(scale="C")(nw.col("temperature")),
                 temperature_K=scale_temperature(scale="K")(nw.col("temperature")),
             )
-    return (LocalWeather,)
-
-
-@app.cell
-def _(LocalWeather, data, pl):
-    (LocalWeather.pipe(pl.DataFrame(data), convert_options=dict(fill_null=True)))
-    return
-
-
-@app.cell
-def _(LocalWeather, data, pa):
-    (LocalWeather.pipe(pa.table(data), convert_options=dict(fill_null=True)))
     return
 
 

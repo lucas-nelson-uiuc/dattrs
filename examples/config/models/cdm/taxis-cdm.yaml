@@ -1,0 +1,7 @@
+name: Taxis Raw
+schema:
+  pickup:
+    dtype: string
+  dropoff:
+    dtype: string
+  

@@ -1,0 +1,28 @@
+metadata:
+  analytic:
+    name: Analytic Name
+    description: Description of analytic.
+    owner: Some Person
+    tags: ["category-1", "category-2", "category-3"]
+
+
+runtime:
+  logging:
+    directory: logs
+    level: INFO
+  output:
+    directory: "SPEC-DATAPREP/OUTPUT/FY25"
+    overwrite: true
+  compute:
+    python_version: 3.12
+    package_manager: uv
+    dataframe:
+      package: polars
+      version: latest
+    authentication:
+      package: cortexpy
+      version: 1.6.16
+
+models:
+  - name: taxis
+    config: examples/config/models/taxis.yaml
